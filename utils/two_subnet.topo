@@ -1,9 +1,12 @@
 [
   {
     "id":0,
-    "name":"xrouter0",
-    "type":2,
-    "ipaddr":"10.0.0.1/24",
+    "name":"xswitch0",
+    "type":0,
+    "image":"",
+    "vcpus":0,
+    "mem":0,
+    "override":false,
     "neighbors":[
       {
         "id":1,
@@ -11,6 +14,10 @@
       },
       {
         "id":2,
+        "link_quality":1
+      },
+      {
+        "id":3,
         "link_quality":1
       }
     ] 
@@ -47,22 +54,44 @@
   },
   {
     "id":3,
-    "name":"xrouter1",
-    "type":2,
-    "ipaddr":"10.0.1.1/24",
+    "name":"android3",
+    "type":1,
+    "image":"tandroid",
+    "vcpus":2,
+    "mem":2048,
+    "override":false,
     "neighbors":[
       {
-        "id":4,
+        "id":0,
+        "link_quality":1
+      }
+    ]
+  },
+  {
+    "id":4,
+    "name":"xswitch1",
+    "type":0,
+    "image":"",
+    "vcpus":0,
+    "mem":0,
+    "override":false,
+    "neighbors":[
+      {
+        "id":5,
         "link_quality":1
       },
       {
-        "id":5,
+        "id":6,
+        "link_quality":1
+      },
+      {
+        "id":7,
         "link_quality":1
       }
     ] 
   },
   {
-    "id":4,
+    "id":5,
     "name":"centos1",
     "type":1,
     "image":"tcentos",
@@ -71,13 +100,13 @@
     "override":true,
     "neighbors":[
       {
-        "id":3,
+        "id":4,
         "link_quality":1
       }
     ]
   },
   {
-    "id":5,
+    "id":6,
     "name":"centos2",
     "type":1,
     "image":"tcentos",
@@ -86,7 +115,22 @@
     "override":false,
     "neighbors":[
       {
-        "id":3,
+        "id":4,
+        "link_quality":1
+      }
+    ]
+  },
+  {
+    "id":7,
+    "name":"centos3",
+    "type":1,
+    "image":"tcentos",
+    "vcpus":1,
+    "mem":1024,
+    "override":true,
+    "neighbors":[
+      {
+        "id":4,
         "link_quality":1
       }
     ]

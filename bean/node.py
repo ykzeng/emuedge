@@ -4,7 +4,11 @@ from abc import ABCMeta, abstractmethod
 class node_type:
 	SWITCH=0
 	DEV=1
+	# xrouter
 	ROUTER=2
+	# pure router
+	PROUTER=3
+
 
 class node:
 	__metaclass__ = ABCMeta
@@ -14,8 +18,6 @@ class node:
 	dtype=1
 	# device name
 	name=''
-	# interface list
-	if_lst=[]
 
 	def __init__(self, did, name, dtype):
 		self.did=did

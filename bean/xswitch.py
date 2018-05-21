@@ -8,7 +8,7 @@ sys.path.insert(0, './')
 from node import node
 from node import node_type
 from helper import autolog as log
-import helper
+from helper import info_exe
 
 # TODO: how to set new bridge as none-automatically adding to new vms
 class xswitch(node):
@@ -25,6 +25,7 @@ class xswitch(node):
 		self.br=session.xenapi.network.create(br_args)
 
 		new_name=session.xenapi.network.get_bridge(self.br)
+		log(new_name)
 		node.__init__(self, did, new_name, node_type.SWITCH)
 
 	def plug(self, session, dev):
@@ -32,6 +33,8 @@ class xswitch(node):
 
 	def uninstall(self, session):
 		session.xenapi.network.destroy(self.br)
+		cmd="ovs-vsctl del-br "+self.name
+		info_exe(cmd)
 
 	def start(self, session=None):
 		# xen switch automatically starts when any device 

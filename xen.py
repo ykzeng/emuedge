@@ -17,6 +17,8 @@ from xswitch import xswitch
 from xswitch import xrouter
 from node import node_type as ntype
 from link import switch2node
+from router import prouter
+from link import prouter2switch
 
 # session: xen session
 # ssh: ssh session
@@ -33,6 +35,7 @@ class xen_net:
 		self.init_templates(template_lst)
 		self.switch_set=Set()
 		self.dev_set=Set()
+		self.router_set=Set()
 		self.ssh=xen_net.init_shell('localhost', uname, pwd)
 		# init a dummy bridge
 		self.dummy=self.create_new_xbr('dummy', record=False)
@@ -139,10 +142,18 @@ class xen_net:
 
 	def create_new_xrouter(self, name, ipaddr, did=-1):
 		if did==-1:
-			did.self.get_new_id()
+			did=self.get_new_id()
 		router=xrouter(self.session, did, name, ipaddr)
 		self.node_list[did]=router
 		self.switch_set.add(did)
+		return router
+
+	def create_new_prouter(self, name, if_json, neighbors, did=-1):
+		if did==-1:
+			did=self.get_new_id()
+		router=prouter(did, name, if_json, neighbors)
+		self.node_list[did]=router
+		self.router_set.add(did)
 		return router
 
 	# ATTENTION: this may cause unexpected data loss!
@@ -172,12 +183,17 @@ class xen_net:
 			switch=self.node_list[sid]
 			switch.uninstall(self.session)
 
+		for rid in self.router_set:
+			r=self.node_list[rid]
+			r.uninstall()
+
 		self.node_list=[]
 		self.emp_ids=[0]
 		# assume that both two sets are maintained properly, meaning uninstalled
 		# devices are removed from the sets on time
 		self.dev_set.clear()
 		self.switch_set.clear()
+		self.router_set.clear()
 
 		self.dummy.uninstall(self.session)
 
@@ -201,6 +217,8 @@ class xen_net:
 		[self.node_list[devid].start(self.session) for devid in self.dev_set]
 		# start all routers
 		[self.node_list[rid].start() for rid in self.switch_set]
+		# start all prouters
+		[self.node_list[prid].start(self.node_list) for prid in self.router_set]
 
 	# did in topology init process would be purely determined by topo definition
 	# TODO: don't forget to update emp_ids[]
@@ -222,6 +240,8 @@ class xen_net:
 				node['override'], did=node['id'], vcpu=node['vcpus'], mem=node['mem'])
 			elif node['type']==ntype.ROUTER:
 				self.create_new_xrouter(node['name'], node['ipaddr'], did=node['id'])
+			elif node['type']==ntype.PROUTER:
+				self.create_new_prouter(node['name'], node['ifs'], node['neighbors'], did=node['id'])
 			else:
 				log("node type " + node['type'] + " currently not supported!")
 		# create all links
@@ -246,9 +266,16 @@ class xen_net:
 			if node2.dtype==ntype.DEV:
 				vif=node1.plug(self.session, node2)
 				return switch2node(vif)
-			#elif node2.dtype==ntype.SWITCH:
-			#	vif1, vif2=node1.plug(self.session, node2)
-			#	return switch2switch(vif1, vif2)
+			elif node2.dtype==ntype.PROUTER:
+				r_if=node2.connect2switch(node1)
+				return prouter2switch(r_if)
+			else:
+				log("type connection between (" + str(node1.dtype) 
+					+ str(node2.dtype) + ") not supported yet!")
+		elif node1.dtype==ntype.PROUTER:
+			if node2.dtype==ntype.SWITCH:
+				r_if=node1.connect2switch(node2)
+				return prouter2switch(r_if)
 			else:
 				log("type connection between (" + str(node1.dtype) 
 					+ str(node2.dtype) + ") not supported yet!")
@@ -260,6 +287,9 @@ class xen_net:
 				return switch2node(vif)
 			else:
 				log("type connection between (" + str(node1.dtype) 
+					+ str(node2.dtype) + ") not supported yet!")
+		else:
+			log("type connection between (" + str(node1.dtype) 
 					+ str(node2.dtype) + ") not supported yet!")
 
 	def __del__(self):

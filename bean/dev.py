@@ -2,8 +2,9 @@ import sys, logging
 from node import node
 from node import node_type
 from abc import abstractmethod
+from router import multi_if as mif
 
-class dev(node):
+class dev(node, mif):
 
 	def __init__(self, did, name, dtype=node_type.DEV):
 		node.__init__(self, did, name, dtype)

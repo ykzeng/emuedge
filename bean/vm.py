@@ -9,9 +9,10 @@ from node import node_type
 from helper import autolog as log
 from helper import mb2byte
 from netif import xen_vif as xvif
+from router import multi_if as mif
 
 # ATTENTION: all memory are in MB
-class vm(dev):
+class vm(dev, mif):
 	# snapshot id
 	#ssid=''
 	# template id
@@ -183,7 +184,8 @@ class vm(dev):
 			for vif in vifs:
 				index=int(session.xenapi.VIF.get_device(vif))
 				linux_name=self.vif_prefix+str(self.domid)+'.'+str(index)
-				self.if_lst[index]=xvif(linux_name, vif)
+				self.if_lst[index]=xvif(vif)
+				self.if_lst[index].start(linux_name)
 			self.print_vifs()
 			return self.domid
 		except XenAPI.Failure as e:
