@@ -57,7 +57,14 @@ def info_exe(cmd):
         autolog("Output: \n{}\n".format(output), logging.INFO)
         return output
 
-def run_in_netns(cmd_lst, netns):
-    cmd=[("ip netns exec "+netns+" "+c) for c in cmd_lst]
-    cmd=''.join(cmd)
+def run_in_netns(cmd_lst, netns=None):
+    if netns!=None:
+        cmd_lst=[("ip netns exec "+netns+" "+c) for c in cmd_lst]
+    cmd=';'.join(cmd_lst)
     return info_exe(cmd)
+#logger=logging.getLogger()
+#logger.setLevel(logging.INFO)
+#print "lalala"
+#cmd=['ip link']
+#cmd.append('ip link')
+#run_in_netns(cmd, 'test')

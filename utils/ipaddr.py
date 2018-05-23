@@ -39,3 +39,29 @@ class ipv4(ip):
 	@staticmethod
 	def get_first_in_subnet(subnet):
 		pass
+
+	@staticmethod
+	def mask_from_suffix(suffix):
+		mask_bit=int(suffix)
+		if mask_bit>32:
+			log("get more than 32 bit mask " + str(mask_bit), logging.CRITICAL)
+			return None
+		elif mask_bit<0:
+			log("get less than 0 bit mask " + str(mask_bit), logging.CRITICAL)
+			return None
+		mask=['1']*int(mask_bit)
+		mask+=['0']*int(32-mask_bit)
+
+		i=0
+		mask_str=''
+		while i<32:
+			sub=''.join(mask[i:(i+8)])
+			mask_str+=str(int(sub,2))+"."
+			i=i+8
+		return mask_str[:-1]
+
+	@staticmethod
+	def suffix_from_mask(mask):
+		pass
+
+#print ipv4.mask_from_suffix("1")

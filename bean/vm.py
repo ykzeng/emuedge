@@ -9,10 +9,9 @@ from node import node_type
 from helper import autolog as log
 from helper import mb2byte
 from netif import xen_vif as xvif
-from router import multi_if as mif
 
 # ATTENTION: all memory are in MB
-class vm(dev, mif):
+class vm(dev):
 	# snapshot id
 	#ssid=''
 	# template id
