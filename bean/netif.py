@@ -111,7 +111,7 @@ class linux_netif(netif):
 	def start_dhcp(self, range_low, range_high):
 		netif.start_dhcp_on(self.name, range_low, range_high, self.mask, self.netns)
 
-class veth(linux_netif):
+class veth():
 	def __init__(self, name1, name2):
 		# use linux_netif obj as peer array element
 		self.peer=[None]*2
@@ -157,20 +157,21 @@ class veth(linux_netif):
 	#	self.ip[num]=ip
 
 class router_if(veth):
-	def __init__(self, rname, index, ip):
+	def __init__(self, rname, index):
 		self.peer=[]
 		in_if=rname+"-in"+str(index)
 		out_if=rname+"-out"+str(index)
 
 		veth.__init__(self, in_if, out_if)
-		#veth.set_netns(self, 0, rname)
-		self.set_ip(0, ip)
 
 	def get_out_if(self):
 		return self.peer[1]
 
 	def get_in_if(self):
 		return self.peer[0]
+
+	def set_ip(self, ip):
+		veth.set_ip(self, 0, ip)
 
 class netns():
 
@@ -190,8 +191,10 @@ class netns():
 
 	def add_if(self, rif_obj, index):
 		in_if=rif_obj.get_in_if()
-		cmd="ip link set "+in_if.name+" "+self.name
+		cmd="ip link set "+in_if.name+" netns "+self.name
+		in_if.set_netns(self.name)
 		self.if_lst[index]=rif_obj
+		info_exe(cmd)
 	#def add_if(self, if_name):
 	#	cmd="ip link set "+if_name+" "+self.name
 	#	info_exe(cmd)

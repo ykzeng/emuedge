@@ -24,8 +24,9 @@ class prouter(node, netns):
 		self.ns=netns(name, size)
 		for i in range(0, size):
 			# create the interfaces
-			newif=rif(self.name, if_json[i]['id'], if_json[i]['ip'])
+			newif=rif(self.name, if_json[i]['id'])
 			self.ns.add_if(newif, if_json[i]['id'])
+			newif.set_ip(if_json[i]['ip'])
 
 		self.neighbors={}
 		for neigh in neighbors:
@@ -46,6 +47,7 @@ class prouter(node, netns):
 		if_lst=self.get_iflst()
 		cmd="ovs-vsctl add-port "+switch_name+" "+if_lst[ifid].get_out_if().name
 		info_exe(cmd)
+		log(cmd)
 
 	def shutdown(self):
 		if_lst=self.get_iflst()
