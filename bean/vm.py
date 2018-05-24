@@ -74,7 +74,7 @@ class vm(dev):
 		if max_vcpu%cores_per_sock!=0:
 			log("max vcpu to set is not a multiple of cores-per-socket! abandon!")
 			return
-		log('the power state: ' + self.get_power_state(session))
+		log('the power state: ' + self.get_power_state(session), logging.INFO)
 		if (self.get_power_state(session)=='Halted'):
 			session.xenapi.VM.set_VCPUs_max(self.vref, max_vcpu)
 		else:
@@ -87,7 +87,7 @@ class vm(dev):
 		if up_vcpu%cores_per_sock!=0:
 			log("startup vcpu to set is not a multiple of cores-per-socket! abandon!")
 			return
-		log('the power state: ' + self.get_power_state(session))
+		log('the power state: ' + self.get_power_state(session), logging.INFO)
 		if (self.get_power_state(session)=='Halted'):
 			session.xenapi.VM.set_VCPUs_at_startup(self.vref, up_vcpu)
 		else:

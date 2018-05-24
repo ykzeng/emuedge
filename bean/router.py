@@ -16,24 +16,37 @@ from netif import netns
 class prouter(node, netns):
 	# @if_json: network interface data in json obj
 	# keys include: ip, id
-	def __init__(self, did, name, if_json, neighbors):
+	def __init__(self, did, rjson):
+		name, if_json, neighbors=rjson['name'], rjson['ifs'], rjson['neighbors']
 		node.__init__(self, did, name, dtype=node_type.PROUTER)
 		# init interfaces on the router
 		size=len(if_json)
 
-		self.ns=netns(name, size)
+		netns.__init__(self, name, size)
 		for i in range(0, size):
 			# create the interfaces
 			newif=rif(self.name, if_json[i]['id'])
-			self.ns.add_if(newif, if_json[i]['id'])
+			self.add_if(newif, if_json[i]['id'])
 			newif.set_ip(if_json[i]['ip'])
 
 		self.neighbors={}
 		for neigh in neighbors:
-			self.neighbors[neigh['id']]=neigh['ifid']
+			self.neighbors[neigh['id']]=neigh['if']
+
+		# init nat
+		if rjson['nat']['is_open']:
+			nat_info=rjson['nat']
+			self.enable_ip_forward()
+			self.masq_est_allow(nat_info['nat_ifs'])
+			self.accept_from_lanif(nat_info['lan_if'])
+			self.open_out_conn()
+		# init dhcp
+		if rjson['dhcp']['is_open']:
+			dhcp_info=rjson['dhcp']
+			self.start_dhcp(dhcp_info['if'], dhcp_info['range_low'], dhcp_info['range_high'])
 
 	def get_iflst(self):
-		return self.ns.if_lst
+		return self.if_lst
 
 	def start(self, dev_lst):
 		for did in self.neighbors:
@@ -47,7 +60,15 @@ class prouter(node, netns):
 		if_lst=self.get_iflst()
 		cmd="ovs-vsctl add-port "+switch_name+" "+if_lst[ifid].get_out_if().name
 		info_exe(cmd)
-		log(cmd)
+
+	def masq_est_allow(self, wan_ifids):
+		for wan_ifid in wan_ifids:
+			wan_if=self.get_if_by_id(wan_ifid).get_in_if()
+			wan_if.masq_nat()
+			wan_if.allow_established_conn()
+
+	def accept_from_lanif(self, lan_ifid):
+		self.get_if_by_id(lan_ifid).get_in_if().accept_from_if()
 
 	def shutdown(self):
 		if_lst=self.get_iflst()
@@ -57,7 +78,10 @@ class prouter(node, netns):
 	def uninstall(self):
 		#for r_if in self.if_lst:
 		#	r_if.delete()
-		self.ns.delete()
+		if_lst=self.get_iflst()
+		for rif in if_lst:
+			rif.delete()
+		self.delete()
 
 	def connect2switch(self, switch):
 		if_lst=self.get_iflst()

@@ -21,7 +21,7 @@
   {
     "id":1,
     "name":"prouter0",
-    "type":0,
+    "type":3,
     "nat":{
       "is_open":false
     },
@@ -59,14 +59,12 @@
       "nat_ifs":[
         0, 1
       ],
-      "lan_ifs":[
-        2
-      ]
+      "lan_if":2
     },
     "ifs":[
       {
         "id":0,
-        "ip":null
+        "ip":"128.194.142.5/24"
       },
       {
         "id":2,
@@ -74,7 +72,7 @@
       },
       {
         "id":1,
-        "ip":null
+        "ip":"128.194.143.6/24"
       }
     ],
     "neighbors":[

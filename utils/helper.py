@@ -54,7 +54,7 @@ def info_exe(cmd):
         print("Status : FAIL", exc.returncode, exc.output)
         return exc.returncode
     else:
-        autolog("Output: \n{}\n".format(output), logging.INFO)
+        #autolog("Output: \n{}\n".format(output), logging.INFO)
         return output
 
 def run_in_netns(cmd_lst, netns=None):

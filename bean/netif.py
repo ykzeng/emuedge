@@ -72,6 +72,24 @@ class linux_netif(netif):
 		if type(output) is str:
 			return linux_netif(peer1), linux_netif(peer2)
 
+	def masq_nat(self):
+		cmd=["iptables -t nat -A POSTROUTING -o "+self.name+" -j MASQUERADE"]
+		run_in_netns(cmd, self.netns)
+
+	def unmasq_nat(self):
+		cmd=["iptables -t nat -D POSTROUTING -o "+self.name+" -j MASQUERADE"]
+		run_in_netns(cmd, self.netns)
+
+	# TODO: maybe we don't need to undo the following ops
+	def accept_from_if(self):
+		cmd=["iptables -A INPUT -i "+self.name+" -j ACCEPT"]
+		run_in_netns(cmd, self.netns)
+
+	def allow_established_conn(self):
+		cmd=[("iptables -A INPUT -i "+self.name
+			+" -m state --state ESTABLISHED,RELATED -j ACCEPT")]
+		run_in_netns(cmd, self.netns)
+
 	def get_pure_ip(self):
 		return self.ip.split('/')[0]
 
@@ -134,10 +152,13 @@ class veth():
 	#	self.netns[num]=netns
 
 	def delete(self):
-		self.peer[0].delete()
+		self.peer[1].delete()
 
 	def set_ip(self, num, ip, clear=False):
 		self.peer[num].set_ip(ip, clear)
+
+	def start_dhcp(self, num, range_low, range_high):
+		self.peer[num].start_dhcp(range_low, range_high)
 
 	#	name=self.peer[num]
 	#	ns=self.netns[num]
@@ -170,8 +191,14 @@ class router_if(veth):
 	def get_in_if(self):
 		return self.peer[0]
 
+	def get_if_name(self):
+		return self.peer[0].name
+
 	def set_ip(self, ip):
 		veth.set_ip(self, 0, ip)
+
+	def start_dhcp(self, range_low, range_high):
+		self.get_in_if().start_dhcp(range_low, range_high)
 
 class netns():
 
@@ -189,6 +216,9 @@ class netns():
 		#	for if_name in if_lst:
 		#		self.add_if(if_name)
 
+	def start_dhcp(self, ifid, range_low, range_high):
+		self.if_lst[ifid].start_dhcp(range_low, range_high)
+
 	def add_if(self, rif_obj, index):
 		in_if=rif_obj.get_in_if()
 		cmd="ip link set "+in_if.name+" netns "+self.name
@@ -203,13 +233,37 @@ class netns():
 		cmd="ip netns del "+self.name
 		output=info_exe(cmd)
 
-	def masq_nat(self, if_name):
-		cmd=["iptables -t nat -A POSTROUTING -o "+if_name+" -j MASQUERADE"]
-		run_in_netns(cmd, self.name)
+	def normal_nat(self, wan_ifids, lan_ifid):
+		lan_ip_prefix=ipaddr.ipmask2prefix(self.if_lst[lan_ifid].ip, self.if_lst[lan_ifid].mask)
+		for wan_ifid in wan_ifids:
+			wan_if_name=self.if_lst[wan_ifid].name
+			wan_if_ip=self.if_lst[wan_ifid].ip
+			cmd="""iptables -t nat -A POSTROUTING -s %s 
+				-o %s -j SNAT --to %s"""%(lan_ip_prefix, wan_if_name, wan_if_ip)
+			cmd_lst.append(cmd)
+		log("final cmd lst for normal nat:"+str(cmd_lst))
+		run_in_netns(cmd_lst, self.name)
 
-	def unmasq_nat(self, if_name):
-		cmd=["iptables -t nat -D POSTROUTING -o "+if_name+" -j MASQUERADE"]
-		run_in_netns(cmd, self.name)
+	def get_if_by_id(self, ifid):
+		return self.if_lst[ifid]
+#
+#	#def masq_nat(self, if_name):
+#	#	cmd=["iptables -t nat -A POSTROUTING -o "+if_name+" -j MASQUERADE"]
+#	#	run_in_netns(cmd, self.name)
+#
+#	#def unmasq_nat(self, if_name):
+#	#	cmd=["iptables -t nat -D POSTROUTING -o "+if_name+" -j MASQUERADE"]
+#	#	run_in_netns(cmd, self.name)
+#
+#	## TODO: maybe we don't need to undo the following ops
+#	#def accept_from_if(self, if_name):
+#	#	cmd=["iptables -A INPUT -i "+if_name+" -j ACCEPT"]
+#	#	run_in_netns(cmd, self.name)
+#
+#	#def allow_established_conn(self, if_name):
+#	#	cmd=[("iptables -A INPUT -i "+if_name
+#	#		+" -m state --state ESTABLISHED,RELATED -j ACCEPT")]
+	#	run_in_netns(cmd, self.name)
 
 	# accept outgoing conn through iptables
 	def open_out_conn(self):
@@ -220,14 +274,8 @@ class netns():
 		cmd=["iptables -D OUTPUT -j ACCEPT"]
 		run_in_netns(cmd, self.name)
 
-	# TODO: maybe we don't need to undo the following ops
-	def accept_from_if(self, if_name):
-		cmd=["iptables -A INPUT -i "+if_name+" -j ACCEPT"]
-		run_in_netns(cmd, self.name)
-
-	def allow_established_conn(self, if_name):
-		cmd=[("iptables -A INPUT -i "+if_name
-			+" -m state --state ESTABLISHED,RELATED -j ACCEPT")]
+	def enable_ip_forward(self):
+		cmd=["echo 1 > /proc/sys/net/ipv4/ip_forward"]
 		run_in_netns(cmd, self.name)
 
 def test_veth():

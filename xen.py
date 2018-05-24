@@ -148,10 +148,10 @@ class xen_net:
 		self.switch_set.add(did)
 		return router
 
-	def create_new_prouter(self, name, if_json, neighbors, did=-1):
+	def create_new_prouter(self, rjson, did=-1):
 		if did==-1:
 			did=self.get_new_id()
-		router=prouter(did, name, if_json, neighbors)
+		router=prouter(did, rjson)
 		self.node_list[did]=router
 		self.router_set.add(did)
 		return router
@@ -171,14 +171,12 @@ class xen_net:
 		#		node.uninstall(self.session)
 		#	else:
 		#		log("unsupported node type " + node.dtype)
-
 		for dev_id in self.dev_set:
 			dev=self.node_list[dev_id]
 			if dev.get_power_state(self.session)=='Running':
 				if not dev.shutdown(self.session):
 					dev.hard_shutdown(self.session)
 			dev.uninstall(self.session)
-
 		for sid in self.switch_set:
 			switch=self.node_list[sid]
 			switch.uninstall(self.session)
@@ -186,7 +184,6 @@ class xen_net:
 		for rid in self.router_set:
 			r=self.node_list[rid]
 			r.uninstall()
-
 		self.node_list=[]
 		self.emp_ids=[0]
 		# assume that both two sets are maintained properly, meaning uninstalled
@@ -236,12 +233,16 @@ class xen_net:
 			if node['type']==ntype.SWITCH:
 				self.create_new_xbr(node['name'], did=node['id'])
 			elif node['type']==ntype.DEV:
-				self.create_new_dev(node['image'], node['name'], 
-				node['override'], did=node['id'], vcpu=node['vcpus'], mem=node['mem'])
+				if node['override']:
+					self.create_new_dev(node['image'], node['name'], 
+					node['override'], did=node['id'], vcpu=node['vcpus'], mem=node['mem'])
+				else:
+					self.create_new_dev(node['image'], node['name'], 
+					node['override'], did=node['id'])
 			elif node['type']==ntype.ROUTER:
 				self.create_new_xrouter(node['name'], node['ipaddr'], did=node['id'])
 			elif node['type']==ntype.PROUTER:
-				self.create_new_prouter(node['name'], node['ifs'], node['neighbors'], did=node['id'])
+				self.create_new_prouter(node, did=node['id'])
 			else:
 				log("node type " + node['type'] + " currently not supported!")
 		# create all links
