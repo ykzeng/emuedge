@@ -54,10 +54,10 @@ class vm(dev):
 	# assume
 	# 2. no vif changes are made otherwhere than our system
 	def create_vif_on_xbr(self, session, xswitch):
-		id=str(self.get_new_vif_id())
-		log(str(id))
+		vif_id=str(self.get_new_vif_id())
+		log(str(vif_id))
 		# construct vif args
-		vif_args={ 'device': id,
+		vif_args={ 'device': vif_id,
 			'network': xswitch.br,
 			'VM': self.vref,
 			'MAC': "",
@@ -65,7 +65,8 @@ class vm(dev):
 			"qos_algorithm_type": "",
 			"qos_algorithm_params": {},
 			"other_config": {} }
-		vif=session.xenapi.VIF.create(vif_args)
+		vif=xvif(session.xenapi.VIF.create(vif_args))
+		self.if_lst[int(vif_id)]=vif
 		return vif
 
 	def set_VCPUs_max(self, session, max_vcpu):
@@ -178,13 +179,18 @@ class vm(dev):
 			session.xenapi.VM.start(self.vref, pause, force)
 			self.domid=session.xenapi.VM.get_domid(self.vref)
 			# update all vifs
-			vifs=session.xenapi.VM.get_VIFs(self.vref)
+			#vifs=session.xenapi.VM.get_VIFs(self.vref)
+			for vif_id in range(0, len(self.if_lst)):
+				if self.if_lst[vif_id]==None:
+					break
+				linux_name=self.vif_prefix+str(self.domid)+'.'+str(vif_id)
+				self.if_lst[vif_id].start(linux_name)
 			#log("length of vifs on " + self.name + ": " + str(len(vifs)))
-			for vif in vifs:
-				index=int(session.xenapi.VIF.get_device(vif))
-				linux_name=self.vif_prefix+str(self.domid)+'.'+str(index)
-				self.if_lst[index]=xvif(vif)
-				self.if_lst[index].start(linux_name)
+			#for vif in vifs:
+			#	index=int(session.xenapi.VIF.get_device(vif))
+			#	linux_name=self.vif_prefix+str(self.domid)+'.'+str(index)
+			#	self.if_lst[index]=xvif(vif)
+			#	self.if_lst[index].start(linux_name)
 			self.print_vifs()
 			return self.domid
 		except XenAPI.Failure as e:

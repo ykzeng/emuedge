@@ -58,7 +58,7 @@ def info_exe(cmd):
         return output
 
 def run_in_netns(cmd_lst, netns=None):
-    if netns!=None:
+    if netns!=None and netns!='':
         cmd_lst=[("ip netns exec "+netns+" "+c) for c in cmd_lst]
     cmd=';'.join(cmd_lst)
     return info_exe(cmd)

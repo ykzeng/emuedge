@@ -19,11 +19,13 @@ from node import node_type as ntype
 from link import switch2node
 from router import prouter
 from link import prouter2switch
+from netif import ifb
 
 # session: xen session
 # ssh: ssh session
 class xen_net:
-	def __init__(self, uname, pwd, template_lst):
+
+	def __init__(self, uname, pwd, template_lst, ifb_count=0):
 		# ASSUME: we got sudo
 		helper.info_exe('chmod +x ./bash/*')
 		# a list of 'dev' instances
@@ -37,8 +39,14 @@ class xen_net:
 		self.dev_set=Set()
 		self.router_set=Set()
 		self.ssh=xen_net.init_shell('localhost', uname, pwd)
+		self.controlled_link_set=Set()
 		# init a dummy bridge
 		self.dummy=self.create_new_xbr('dummy', record=False)
+		# TODO: here we need a change
+		self.ifb_count=0
+		if ifb_count>0:
+			ifb.init(ifb_count)
+			self.ifb_count=ifb_count
 		pass
 
 	@staticmethod
@@ -117,11 +125,11 @@ class xen_net:
 		return self.node_list[did]
 
 	# the 1st entry to create node
-	def create_new_dev(self, tname, name, override, did=-1, vcpu=0, mem=0):
+	def create_new_dev(self, tname, name, override, did=-1, vcpu=0, mem=0, vif_prefix=None):
 		if did==-1:
 			did=self.get_new_id()
 		template=self.template_dict[tname]
-		node=vm(self.session, did, template, name)
+		node=vm(self.session, did, template, name, vif_prefix=vif_prefix)
 		if override:
 			node.set_fixed_VCPUs(self.session, vcpu)
 			node.set_memory(self.session, mem)
@@ -193,6 +201,7 @@ class xen_net:
 		self.router_set.clear()
 
 		self.dummy.uninstall(self.session)
+		ifb.clear()
 
 		stop_time=time.time()
 		log("total time (s) consumed for topology clear: " + str(stop_time-start_time))
@@ -216,6 +225,9 @@ class xen_net:
 		[self.node_list[rid].start() for rid in self.switch_set]
 		# start all prouters
 		[self.node_list[prid].start(self.node_list) for prid in self.router_set]
+		# enable link control
+		[link.shape_all() for link in self.controlled_link_set]
+
 
 	# did in topology init process would be purely determined by topo definition
 	# TODO: don't forget to update emp_ids[]
@@ -233,12 +245,16 @@ class xen_net:
 			if node['type']==ntype.SWITCH:
 				self.create_new_xbr(node['name'], did=node['id'])
 			elif node['type']==ntype.DEV:
+				vif_prefix='vif'
+				if 'vif_prefix' in node:
+					vif_prefix=node['vif_prefix']
 				if node['override']:
 					self.create_new_dev(node['image'], node['name'], 
-					node['override'], did=node['id'], vcpu=node['vcpus'], mem=node['mem'])
+					node['override'], did=node['id'], vcpu=node['vcpus'], 
+					mem=node['mem'], vif_prefix=vif_prefix)
 				else:
 					self.create_new_dev(node['image'], node['name'], 
-					node['override'], did=node['id'])
+					node['override'], did=node['id'], vif_prefix=vif_prefix)
 			elif node['type']==ntype.ROUTER:
 				self.create_new_xrouter(node['name'], node['ipaddr'], did=node['id'])
 			elif node['type']==ntype.PROUTER:
@@ -251,11 +267,23 @@ class xen_net:
 			node1=self.node_list[id1]
 			for node2 in node1info['neighbors']:
 				id2=node2['id']
-				node2=self.node_list[id2]
-				if graph[id1][id2]==None:
-					link=self.connect(node1, node2)
+				node2_obj=self.node_list[id2]
+				link=graph[id1][id2]
+				# if no link obj has been created
+				if link==None:
+					link=self.connect(node1, node2_obj)
 					graph[id1][id2]=link
 					graph[id2][id1]=link
+				# if link_control is enabled
+				if 'link_control' in node2:
+					# attach link control info to link
+					link.append_node(node1.dtype, node2['link_control'])
+					log("get controlled link between: "+str(id1)+" "+str(id2))
+					self.controlled_link_set.add(link)
+					if node1.dtype==ntype.DEV:
+						self.ifb_count+=1
+		ifb.init(self.ifb_count)
+
 		stop_time=time.time()
 		log("total time (s) consumed for topology init: " + str(stop_time-start_time))
 

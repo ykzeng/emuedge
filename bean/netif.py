@@ -35,6 +35,13 @@ class netif:
 	    else:
 	        info_exe(cmd)
 
+	def redirect_to(self, ifb):
+		cmds=["tc qdisc add dev "+self.name+" handle ffff: ingress", 
+			"tc filter add dev "+self.name+""" parent ffff: protocol ip u32 match u32 0 0 action mirred egress redirect dev """+ifb.name]
+		#log(str(cmds), logging.CRITICAL)
+		#raw_input("pls check the redirect commands.")
+		run_in_netns(cmds)
+
 class xen_vif(netif):
 	ref=''
 
@@ -60,8 +67,7 @@ class linux_netif(netif):
 	# suppose the ip is str
 	def __init__(self, name, ip=None, netns=None):
 		netif.__init__(self, name)
-		if ip!=None:
-			self.set_ip(ip)
+		self.ip
 		self.netns=netns
 		pass
 
@@ -128,6 +134,34 @@ class linux_netif(netif):
 
 	def start_dhcp(self, range_low, range_high):
 		netif.start_dhcp_on(self.name, range_low, range_high, self.mask, self.netns)
+
+class ifb(linux_netif):
+	ifb_count=0
+	ifb_total=0
+
+	@staticmethod
+	def create_new():
+		if ifb.ifb_count<ifb.ifb_total:
+			num=ifb.ifb_count
+			ifb.ifb_count+=1
+			return ifb("ifb"+str(num))
+		else:
+			log("creating ifb failed! ifb_total exceeded or ifb hasn't inited", logging.CRITICAL)
+
+	# be CAREFUL: this command clears all previous existing ifb
+	@staticmethod
+	def init(total):
+		cmds="modprobe -r ifb; modprobe ifb numifbs="+str(total)
+		info_exe(cmds)
+		ifb.ifb_total=total
+
+	@staticmethod
+	def clear():
+		cmd="modprobe -r ifb"
+		info_exe(cmds)
+
+	def __init__(self, name):
+		linux_netif.__init__(self, name)
 
 class veth():
 	def __init__(self, name1, name2):

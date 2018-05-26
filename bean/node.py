@@ -3,10 +3,11 @@ from abc import ABCMeta, abstractmethod
 
 class node_type:
 	SWITCH=0
+	# currently only supports VM
 	DEV=1
-	# xrouter
+	# xrouter implemented based on ovs switch
 	ROUTER=2
-	# pure router
+	# pure router based on linux netns
 	PROUTER=3
 
 
