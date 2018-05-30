@@ -5,8 +5,8 @@ import XenAPI
 from sets import Set
 import time
 
-sys.path.insert(0, './bean')
-sys.path.insert(0, './utils')
+sys.path.insert(0, './bean/')
+sys.path.insert(0, './utils/')
 
 from vm import vm
 from dev import dev
