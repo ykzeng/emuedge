@@ -8,6 +8,7 @@ sys.path.insert(0, './')
 from node import node
 from node import node_type
 from helper import autolog as log
+import helper
 from helper import info_exe
 
 # TODO: how to set new bridge as none-automatically adding to new vms

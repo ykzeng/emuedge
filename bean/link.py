@@ -18,22 +18,27 @@ class link:
 
 	link=None
 
-	def __init__(self, link):
+	def __init__(self, node1, node2, link):
 		self.link=link
-		self.type_lst=[]
-		self.param_lst=[]
+		self.node_lst=[node1, node2]
+		self.type_lst=[node1.dtype, node2.dtype]
+		self.param_lst=[None]*len(self.node_lst)
 
-	def append_node(self, node_type, param):
-		self.type_lst.append(node_type)
-		self.param_lst.append(param)
+	def append_qos(self, node, param):
+		#log("appending qos to <"+str(self.node_lst[0].name)+","+str(self.node_lst[1].name)+">")
+		#log("direction start:"+str(node.name)+"->")
+		for i in range(0, len(self.node_lst)):
+			if self.node_lst[i]==node:
+				self.param_lst[i]=param
 
 	def shape_all(self):
 		if len(self.type_lst)==len(self.param_lst):
 			for i in range(0, len(self.type_lst)):
-				self.shape_traffic(self.type_lst[i], self.param_lst[i])
+				if self.param_lst[i]!=None:
+					self.shape_traffic(self.type_lst[i], self.param_lst[i])
 		else:
 			log("cannot shape bidirectional traffic: length of type_lst: "
-				+str(len(self.type_lst))+"\t param_lst: "+str(len(param_lst)))
+				+str(len(self.type_lst))+"\t param_lst: "+str(len(self.param_lst)))
 
 	@abstractmethod
 	def delete(self):
@@ -98,6 +103,7 @@ class switch2node(link):
 		session.xenapi.VIF.destroy(self.link)
 
 	def shape_traffic(self, node_type, params):
+		#log("shaping traffic for:"+str(self.link.name))
 		cmds=traffic_cmd_compile(params)
 		# determine linux system if name to apply control to
 		if_name=""

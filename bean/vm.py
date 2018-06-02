@@ -65,7 +65,8 @@ class vm(dev):
 			"qos_algorithm_type": "",
 			"qos_algorithm_params": {},
 			"other_config": {} }
-		vif=xvif(session.xenapi.VIF.create(vif_args))
+		handle=session.xenapi.VIF.create(vif_args)
+		vif=xvif(handle)
 		self.if_lst[int(vif_id)]=vif
 		return vif
 

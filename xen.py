@@ -13,11 +13,11 @@ from dev import dev
 from topo import topo
 import helper
 from helper import autolog as log
-from xswitch import xswitch
 from xswitch import xrouter
 from node import node_type as ntype
 from link import switch2node
 from router import prouter
+from xswitch import xswitch
 from link import prouter2switch
 from netif import ifb
 
@@ -179,6 +179,13 @@ class xen_net:
 		#		node.uninstall(self.session)
 		#	else:
 		#		log("unsupported node type " + node.dtype)
+
+		# ATTENTION: this will consequently delete the other half of netif, qdisc rules
+		for rid in self.router_set:
+			r=self.node_list[rid]
+			r.uninstall()
+		log("cleared all virtual if, qdisc rules and netns")
+
 		for dev_id in self.dev_set:
 			dev=self.node_list[dev_id]
 			if dev.get_power_state(self.session)=='Running':
@@ -189,9 +196,6 @@ class xen_net:
 			switch=self.node_list[sid]
 			switch.uninstall(self.session)
 
-		for rid in self.router_set:
-			r=self.node_list[rid]
-			r.uninstall()
 		self.node_list=[]
 		self.emp_ids=[0]
 		# assume that both two sets are maintained properly, meaning uninstalled
@@ -238,7 +242,7 @@ class xen_net:
 		self.node_list=[None]*len(nodes)
 		self.emp_ids[0]=len(nodes)
 
-		graph=[[None]*len(nodes)]*len(nodes)
+		self.graph=[[None for x in range(len(nodes))] for y in range(len(nodes))]
 
 		# create all nodes
 		for node in nodes:
@@ -261,26 +265,27 @@ class xen_net:
 				self.create_new_prouter(node, did=node['id'])
 			else:
 				log("node type " + node['type'] + " currently not supported!")
-		# create all links
-		for node1info in nodes:
-			id1=node1info['id']
-			node1=self.node_list[id1]
-			for node2 in node1info['neighbors']:
-				id2=node2['id']
-				node2_obj=self.node_list[id2]
-				link=graph[id1][id2]
-				# if no link obj has been created
+
+		for n1_json in nodes:
+			src_nid=n1_json['id']
+			src_node=self.node_list[src_nid]
+			#raw_input("src from "+src_node.name)
+
+			for n2_json in n1_json['neighbors']:
+				dest_nid=n2_json['id']
+				dest_node=self.node_list[dest_nid]
+				#raw_input("dest to "+dest_node.name)
+
+				link=self.graph[src_nid][dest_nid]
 				if link==None:
-					link=self.connect(node1, node2_obj)
-					graph[id1][id2]=link
-					graph[id2][id1]=link
-				# if link_control is enabled
-				if 'link_control' in node2:
-					# attach link control info to link
-					link.append_node(node1.dtype, node2['link_control'])
-					log("get controlled link between: "+str(id1)+" "+str(id2))
+					#log("creating new link between:"+src_node.name+","+dest_node.name)
+					link=self.connect(src_node, dest_node)
+					self.graph[src_nid][dest_nid]=link
+					self.graph[dest_nid][src_nid]=link
+				if "link_control" in n2_json:
+					link.append_qos(src_node, n2_json["link_control"])
 					self.controlled_link_set.add(link)
-					if node1.dtype==ntype.DEV:
+					if dest_node.dtype==ntype.DEV:
 						self.ifb_count+=1
 		ifb.init(self.ifb_count)
 
@@ -294,17 +299,17 @@ class xen_net:
 		if node1.dtype==ntype.SWITCH or node1.dtype==ntype.ROUTER:
 			if node2.dtype==ntype.DEV:
 				vif=node1.plug(self.session, node2)
-				return switch2node(vif)
+				return switch2node(node1, node2, vif)
 			elif node2.dtype==ntype.PROUTER:
 				r_if=node2.connect2switch(node1)
-				return prouter2switch(r_if)
+				return prouter2switch(node1, node2, r_if)
 			else:
 				log("type connection between (" + str(node1.dtype) 
 					+ str(node2.dtype) + ") not supported yet!")
 		elif node1.dtype==ntype.PROUTER:
 			if node2.dtype==ntype.SWITCH:
 				r_if=node1.connect2switch(node2)
-				return prouter2switch(r_if)
+				return prouter2switch(node1, node2, r_if)
 			else:
 				log("type connection between (" + str(node1.dtype) 
 					+ str(node2.dtype) + ") not supported yet!")
@@ -313,7 +318,7 @@ class xen_net:
 			# TODO: we may have to separate them if new router def comes in
 			if node2.dtype==ntype.SWITCH or node2.dtype==ntype.ROUTER:
 				vif=node2.plug(self.session, node1)
-				return switch2node(vif)
+				return switch2node(node1, node2, vif)
 			else:
 				log("type connection between (" + str(node1.dtype) 
 					+ str(node2.dtype) + ") not supported yet!")
@@ -365,10 +370,15 @@ def test_topo(topo, start=True, nolog=False):
 	logger=logging.getLogger()
 	logger.disabled=nolog
 	# init xennet with templates we would like to use
-	tlst=['tandroid', 'tcentos']
+	tlst=['tandroid', 'tcentos', 'centos-new']
 	xnet=xen_net("root", "789456123", tlst)
 	# creating test nodes
 	xnet.init_topo('topo/' + topo)
 	if start:
 		xnet.start_all()
+	return xnet
+
+def xnet_interactive():
+	tlst=['tandroid', 'tcentos']
+	xnet=xen_net("root", "789456123", tlst)
 	return xnet
