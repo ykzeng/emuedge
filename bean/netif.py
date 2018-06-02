@@ -158,7 +158,7 @@ class ifb(linux_netif):
 	@staticmethod
 	def clear():
 		cmd="modprobe -r ifb"
-		info_exe(cmds)
+		info_exe(cmd)
 
 	def __init__(self, name):
 		linux_netif.__init__(self, name)

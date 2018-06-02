@@ -41,7 +41,7 @@ class xen_net:
 		self.ssh=xen_net.init_shell('localhost', uname, pwd)
 		self.controlled_link_set=Set()
 		# init a dummy bridge
-		self.dummy=self.create_new_xbr('dummy', record=False)
+		#self.dummy=self.create_new_xbr('dummy', record=False)
 		# TODO: here we need a change
 		self.ifb_count=0
 		if ifb_count>0:
@@ -195,6 +195,7 @@ class xen_net:
 		for sid in self.switch_set:
 			switch=self.node_list[sid]
 			switch.uninstall(self.session)
+		log("cleared all devices and switches")
 
 		self.node_list=[]
 		self.emp_ids=[0]
@@ -204,8 +205,9 @@ class xen_net:
 		self.switch_set.clear()
 		self.router_set.clear()
 
-		self.dummy.uninstall(self.session)
+		#self.dummy.uninstall(self.session)
 		ifb.clear()
+		log("cleared all metadata, ifb")
 
 		stop_time=time.time()
 		log("total time (s) consumed for topology clear: " + str(stop_time-start_time))
