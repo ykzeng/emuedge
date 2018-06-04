@@ -16,37 +16,53 @@ from netif import netns
 class prouter(node, netns):
 	# @if_json: network interface data in json obj
 	# keys include: ip, id
-	def __init__(self, did, rjson):
-		name, if_json, neighbors=rjson['name'], rjson['ifs'], rjson['neighbors']
+	def __init__(self, did, name, ifs_json=None, nat_params=None, dhcp_params=None, neighbors=None):
 		node.__init__(self, did, name, dtype=node_type.PROUTER)
-		# init interfaces on the router
-		size=len(if_json)
+		netns.__init__(self, name)
+		if ifs_json!=None:
+			self.init_ifs_json(ifs_json)
+			if nat_params!=None and nat_params['is_open']==True:
+				self.init_nat_json(nat_params)
+			if dhcp_params!=None and dhcp_params['is_open']==True:
+				self.init_dhcp_json(dhcp_params)
+			if neighbors!=None:
+				self.init_neighbors(neighbors)
+		else:
+			if nat_params['is_open'] or dhcp_params['is_open'] or neighbors!=None:
+				log("must have ifs to open NAT/DHCP", logging.CRITICAL)
 
-		netns.__init__(self, name, size)
+	def init_ifs_json(self, ifs_json):
+		# init interfaces on the router
+		size=len(ifs_json)
+		self.setup_if(size)
 		for i in range(0, size):
 			# create the interfaces
-			newif=rif(self.name, if_json[i]['id'])
-			self.add_if(newif, if_json[i]['id'])
-			newif.set_ip(if_json[i]['ip'])
+			newif=rif(self.name, ifs_json[i]['id'])
+			self.add_if(newif, ifs_json[i]['id'])
+			newif.set_ip(ifs_json[i]['ip'])
 
-		self.neighbors={}
-		for neigh in neighbors:
+	def init_neighbors(self, neigh_params):
+		for neigh in neigh_params:
 			self.neighbors[neigh['id']]=neigh['if']
+			#log("get neighbor did: "+str(neigh['id'])+" through netif: "+str(neigh['if']))
 
+	def start_nat(self, nat_if, lan_if):
+		self.enable_ip_forward()
+		self.masq_est_allow(nat_if)
+		self.accept_from_lanif(lan_if)
+		self.open_out_conn()
+
+	def init_nat_json(self, nat_params):
 		# init nat
-		if rjson['nat']['is_open']:
-			nat_info=rjson['nat']
-			self.enable_ip_forward()
-			self.masq_est_allow(nat_info['nat_ifs'])
-			self.accept_from_lanif(nat_info['lan_if'])
-			self.open_out_conn()
-		# init dhcp
-		if rjson['dhcp']['is_open']:
-			dhcp_info=rjson['dhcp']
-			self.start_dhcp(dhcp_info['if'], dhcp_info['range_low'], dhcp_info['range_high'])
+		if nat_params['is_open']:
+			nat_info=nat_params
+			self.start_nat(nat_info['nat_ifs'], nat_info['lan_if'])
 
-	def get_iflst(self):
-		return self.if_lst
+	def init_dhcp_json(self, dhcp_params):
+		# init dhcp
+		if dhcp_params['is_open']:
+			dhcp_info=dhcp_params
+			self.start_dhcp(dhcp_info['if'], dhcp_info['range_low'], dhcp_info['range_high'])
 
 	def start(self, dev_lst):
 		for did in self.neighbors:

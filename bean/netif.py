@@ -236,11 +236,11 @@ class router_if(veth):
 
 class netns():
 
-	def __init__(self, name, if_size):
+	def __init__(self, name):
 		# netns name
 		self.name=name
 		# interfaces in this netns
-		self.if_lst=[None]*if_size
+		self.if_lst=[]
 		self.setup(name)
 
 	def setup(self, name):
@@ -249,6 +249,8 @@ class netns():
 		#if if_lst!=None:
 		#	for if_name in if_lst:
 		#		self.add_if(if_name)
+	def setup_if(self, size):
+		self.if_lst=[None]*size
 
 	def start_dhcp(self, ifid, range_low, range_high):
 		self.if_lst[ifid].start_dhcp(range_low, range_high)
@@ -259,6 +261,15 @@ class netns():
 		in_if.set_netns(self.name)
 		self.if_lst[index]=rif_obj
 		info_exe(cmd)
+
+	def append_if(self, rif_obj):
+		in_if=rif_obj.get_in_if()
+		cmd="ip link set "+in_if.name+" netns "+self.name
+		in_if.set_netns(self.name)
+		self.if_lst.append(rif_obj)
+		info_exe(cmd)
+		return (len(self.if_lst)-1)
+
 	#def add_if(self, if_name):
 	#	cmd="ip link set "+if_name+" "+self.name
 	#	info_exe(cmd)
@@ -280,6 +291,9 @@ class netns():
 
 	def get_if_by_id(self, ifid):
 		return self.if_lst[ifid]
+
+	def get_iflst(self):
+		return self.if_lst
 #
 #	#def masq_nat(self, if_name):
 #	#	cmd=["iptables -t nat -A POSTROUTING -o "+if_name+" -j MASQUERADE"]

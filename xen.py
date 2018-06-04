@@ -156,10 +156,11 @@ class xen_net:
 		self.switch_set.add(did)
 		return router
 
-	def create_new_prouter(self, rjson, did=-1):
+	def create_new_prouter(self, name, ifs_json=None, nat_json=None, dhcp_json=None, neighbors=None, did=-1):
 		if did==-1:
 			did=self.get_new_id()
-		router=prouter(did, rjson)
+		router=prouter(did, name, ifs_json=ifs_json, nat_params=nat_json, 
+			dhcp_params=dhcp_json, neighbors=neighbors)
 		self.node_list[did]=router
 		self.router_set.add(did)
 		return router
@@ -264,7 +265,8 @@ class xen_net:
 			elif node['type']==ntype.ROUTER:
 				self.create_new_xrouter(node['name'], node['ipaddr'], did=node['id'])
 			elif node['type']==ntype.PROUTER:
-				self.create_new_prouter(node, did=node['id'])
+				self.create_new_prouter(node['name'], node['ifs'], 
+					node['nat'], node['dhcp'], node['neighbors'], did=node['id'])
 			else:
 				log("node type " + node['type'] + " currently not supported!")
 

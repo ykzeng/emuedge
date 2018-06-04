@@ -13,17 +13,16 @@ class node_type:
 
 class node:
 	__metaclass__ = ABCMeta
-	# device id
-	did=''
-	# device type
-	dtype=1
-	# device name
-	name=''
 
 	def __init__(self, did, name, dtype):
+		# device id
 		self.did=did
+		# device type
 		self.dtype=dtype
+		# device name
 		self.name=name
+		# neighbor of the node
+		self.neighbors={}
 		pass
 
 	@abstractmethod
