@@ -69,6 +69,9 @@ class xswitch(node):
 		info_exe(cmd)
 
 	def uninstall(self, session):
+		for neigh in self.neighbors:
+			link_if=self.neighbors[neigh]
+			link_if.delete()
 		session.xenapi.network.destroy(self.br)
 		cmd="ovs-vsctl del-br "+self.name
 		info_exe(cmd)
