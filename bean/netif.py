@@ -7,6 +7,7 @@ from helper import info_exe
 from helper import run_in_netns
 from helper import autolog as log
 from ipaddr import ipv4
+import copy
 
 # network interface abstraction
 class netif:
@@ -42,13 +43,24 @@ class netif:
 		#raw_input("pls check the redirect commands.")
 		run_in_netns(cmds)
 
-class xen_vif(netif):
+
+
+class reversable:
+	__metaclass__ = ABCMeta
+	@abstractmethod
+	def reverse_clone(self):
+		pass
+
+class xen_vif(netif, reversable):
 	ref=''
 
 	# init time is not ready-to-use
 	# only after setup could this be used
 	def __init__(self, ref):
 		self.ref=ref
+
+	def reverse_clone(self):
+		return self
 
 	def start(self, name):
 		self.name=name
@@ -70,6 +82,10 @@ class linux_netif(netif):
 		self.ip
 		self.netns=netns
 		pass
+
+	def connect2br(self, br):
+		cmd=["ovs-vsctl add-port "+br+" "+self.name]
+		run_in_netns(cmd)
 
 	@staticmethod
 	def create_veth_pairs(peer1, peer2):
@@ -163,14 +179,19 @@ class ifb(linux_netif):
 	def __init__(self, name):
 		linux_netif.__init__(self, name)
 
-class veth():
-	def __init__(self, name1, name2):
+class veth(reversable):
+	def __init__(self, peer1, peer2, init=True):
 		# use linux_netif obj as peer array element
 		self.peer=[None]*2
 		#self.netns=[None]*2
 		#self.ip=['']*2
+		if init:
+			self.peer[0], self.peer[1]=linux_netif.create_veth_pairs(peer1, peer2)
+		else:
+			self.peer=[peer1, peer2]
 
-		self.peer[0], self.peer[1]=linux_netif.create_veth_pairs(name1, name2)
+	def reverse_clone(self):
+		return veth(self.peer[1], self.peer[0], init=False)
 
 	def start(self):
 		for i in range(0, len(self.peer)):

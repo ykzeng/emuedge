@@ -15,10 +15,12 @@ import helper
 from helper import autolog as log
 from xswitch import xrouter
 from node import node_type as ntype
-from link import switch2node
+#from link import switch2node
 from router import prouter
 from xswitch import xswitch
-from link import prouter2switch
+#from link import prouter2switch
+from link import veth_link
+from link import if_link
 from netif import ifb
 
 # session: xen session
@@ -233,7 +235,7 @@ class xen_net:
 		# start all prouters
 		[self.node_list[prid].start(self.node_list) for prid in self.router_set]
 		# enable link control
-		[link.shape_all() for link in self.controlled_link_set]
+		[link.shape_traffic() for link in self.controlled_link_set]
 
 
 	# did in topology init process would be purely determined by topo definition
@@ -283,14 +285,17 @@ class xen_net:
 				link=self.graph[src_nid][dest_nid]
 				if link==None:
 					#log("creating new link between:"+src_node.name+","+dest_node.name)
-					link=self.connect(src_node, dest_node)
+					link, reverse=self.connect(src_node, dest_node)
 					self.graph[src_nid][dest_nid]=link
-					self.graph[dest_nid][src_nid]=link
+					self.graph[dest_nid][src_nid]=reverse
 				if "link_control" in n2_json:
-					link.append_qos(src_node, n2_json["link_control"])
+					#link.append_qos(src_node, n2_json["link_control"])
+					#self.controlled_link_set.add(link)
+					link.set_qos(n2_json["link_control"])
 					self.controlled_link_set.add(link)
 					if dest_node.dtype==ntype.DEV:
 						self.ifb_count+=1
+
 		ifb.init(self.ifb_count)
 
 		stop_time=time.time()
@@ -301,19 +306,10 @@ class xen_net:
 		#log("\nnode1 name:\t" + str(node1.name) + "\n node2 name:\t" + str(node2.name) + "\n")
 		#log("\nnode1 type:\t" + str(node1.dtype) + "\n node2 type:\t" + str(node2.dtype) + "\n")
 		if node1.dtype==ntype.SWITCH or node1.dtype==ntype.ROUTER:
-			if node2.dtype==ntype.DEV:
-				vif=node1.plug(self.session, node2)
-				return switch2node(node1, node2, vif)
-			elif node2.dtype==ntype.PROUTER:
-				r_if=node2.connect2switch(node1)
-				return prouter2switch(node1, node2, r_if)
-			else:
-				log("type connection between (" + str(node1.dtype) 
-					+ str(node2.dtype) + ") not supported yet!")
+			return node1.connect(node2, session=self.session)
 		elif node1.dtype==ntype.PROUTER:
 			if node2.dtype==ntype.SWITCH:
-				r_if=node1.connect2switch(node2)
-				return prouter2switch(node1, node2, r_if)
+				return node2.connect(node1)
 			else:
 				log("type connection between (" + str(node1.dtype) 
 					+ str(node2.dtype) + ") not supported yet!")
@@ -321,8 +317,7 @@ class xen_net:
 			# TODO: combine router type with switch type
 			# TODO: we may have to separate them if new router def comes in
 			if node2.dtype==ntype.SWITCH or node2.dtype==ntype.ROUTER:
-				vif=node2.plug(self.session, node1)
-				return switch2node(node1, node2, vif)
+				return node2.connect(node1, session=self.session)
 			else:
 				log("type connection between (" + str(node1.dtype) 
 					+ str(node2.dtype) + ") not supported yet!")

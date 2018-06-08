@@ -10,6 +10,9 @@ from node import node_type
 from helper import autolog as log
 import helper
 from helper import info_exe
+from netif import veth
+from link import veth_link
+from link import if_link
 
 # TODO: how to set new bridge as none-automatically adding to new vms
 class xswitch(node):
@@ -24,13 +27,46 @@ class xswitch(node):
 				'other_config':{},
 				'blobs': {}}
 		self.br=session.xenapi.network.create(br_args)
-
 		new_name=session.xenapi.network.get_bridge(self.br)
-		log(new_name)
+		log("XSwitch "+name+" in Linux: "+new_name)
 		node.__init__(self, did, new_name, node_type.SWITCH)
 
 	def plug(self, session, dev):
 		return dev.create_vif_on_xbr(session, self)
+
+	def connect(self, node, session=None):
+		link, reverse=None, None
+		if node.dtype==node_type.DEV:
+			vif=node.create_vif_on_xbr(session, self)
+			link=if_link(self, node, vif)
+			reverse=link.create_reverse_link()
+		elif node.dtype==node_type.PROUTER:
+			rif=node.connect2switch(self)
+			link=veth_link(self, node, rif)
+			reverse=link.create_reverse_link()
+		elif node.dtype==node_type.SWITCH:
+			veth_if=self.connect2switch(node)
+			link=veth_link(self, node, veth_if)
+			reverse=link.create_reverse_link()
+			node.neighbors[self]=reverse.link_if
+		else:
+			log("type connection between (" + str(self.dtype) 
+				+ str(node.dtype) + ") not supported yet!")
+		return link, reverse
+
+	def connect2switch(self, switch):
+		# add switch and veth pair to dictionary
+		# can only plug veth ifs on switches after xen switch is initialized
+		# i.e., at least one of Xen device on this bridge is started
+		peer1=self.name+"_"+switch.name
+		peer2=switch.name+"_"+self.name
+		veth_if=veth(peer1, peer2)
+		self.neighbors[switch]=veth_if
+		return veth_if
+
+	def add_port(self, port):
+		cmd="ovs-vsctl add-port "+self.name+" "+port
+		info_exe(cmd)
 
 	def uninstall(self, session):
 		session.xenapi.network.destroy(self.br)
@@ -40,7 +76,12 @@ class xswitch(node):
 	def start(self, session=None):
 		# xen switch automatically starts when any device 
 		# connecting to it starts
-		pass
+		for key in self.neighbors:
+			if key.dtype==node_type.SWITCH:
+				self.add_port(self.neighbors[key].peer[0].name)
+				self.neighbors[key].peer[0].start()
+				self.neighbors[key].peer[1].start()
+
 
 class xrouter(xswitch):
 	# the if name of veth external end

@@ -9,6 +9,8 @@ class node_type:
 	ROUTER=2
 	# pure router based on linux netns
 	PROUTER=3
+	# mininet host
+	MN=4
 
 
 class node:
