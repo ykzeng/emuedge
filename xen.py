@@ -293,7 +293,7 @@ class xen_net:
 					#self.controlled_link_set.add(link)
 					link.set_qos(n2_json["link_control"])
 					self.controlled_link_set.add(link)
-					if dest_node.dtype==ntype.DEV:
+					if src_node.dtype==ntype.DEV:
 						self.ifb_count+=1
 
 		ifb.init(self.ifb_count)

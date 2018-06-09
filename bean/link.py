@@ -98,15 +98,17 @@ class if_link(link):
 		# determine linux system if name to apply control to
 		if_name=""
 		if self.out:
-			if_name=self.link_if.name
-		else:
 			new_ifb=ifb.create_new()
 			new_ifb.start()
 			self.link_if.redirect_to(new_ifb)
 			if_name=new_ifb.name
+		else:
+			if_name=self.link_if.name
 
 		for i in range(0, len(cmds)):
 			cmds[i]=(cmds[i].format(if_name))
+		#log(cmds)
+		#raw_input("in if_link.shape_traffic(): ")
 		info_exe(cmds)
 
 class veth_link(link):
