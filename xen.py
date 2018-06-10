@@ -234,6 +234,20 @@ class xen_net:
 		[self.node_list[rid].start() for rid in self.switch_set]
 		# start all prouters
 		[self.node_list[prid].start(self.node_list) for prid in self.router_set]
+		# waiting for link control to apply after all machine network functions are ready
+		count=len(self.dev_set)
+		tap_check=[False]*count
+		log("looping to wait for network-ready on all vms before setting up traffic rules")
+		while count!=0:
+			i=0
+			for devid in self.dev_set:
+				if not tap_check[i]:
+					if self.node_list[devid].check_tap():
+						#log("get the "+str(i)+"th tap ready for device "+self.node_list[devid].name)
+						tap_check[i]=True
+						count-=1
+				i+=1
+		log("start applying traffic shaping rules...")
 		# enable link control
 		[link.shape_traffic() for link in self.controlled_link_set]
 
@@ -276,6 +290,9 @@ class xen_net:
 			src_nid=n1_json['id']
 			src_node=self.node_list[src_nid]
 			#raw_input("src from "+src_node.name)
+
+			if 'neighbors' not in n1_json:
+				continue
 
 			for n2_json in n1_json['neighbors']:
 				dest_nid=n2_json['id']

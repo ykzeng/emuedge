@@ -100,10 +100,13 @@ class if_link(link):
 		if self.out:
 			new_ifb=ifb.create_new()
 			new_ifb.start()
+			#raw_input("after starting ifb")
 			self.link_if.redirect_to(new_ifb)
 			if_name=new_ifb.name
+			#raw_input("after redirecting to new ifb: "+if_name)
 		else:
 			if_name=self.link_if.name
+			#raw_input("shaping in traffic with vif")
 
 		for i in range(0, len(cmds)):
 			cmds[i]=(cmds[i].format(if_name))

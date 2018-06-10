@@ -56,17 +56,35 @@ class xen_vif(netif, reversable):
 
 	# init time is not ready-to-use
 	# only after setup could this be used
-	def __init__(self, ref):
+	def __init__(self, ref, br_name, vif_id, vif_prefix="vif"):
 		self.ref=ref
+		self.br_name=br_name
+		self.vif_id=vif_id
+		self.vif_prefix=vif_prefix
 
 	def reverse_clone(self):
 		return self
 
-	def start(self, name):
-		self.name=name
+	def start(self, domid):
+		self.domid=domid
+		self.name=self.vif_prefix+str(domid)+'.'+str(self.vif_id)
 
-	def delete(session):
+	def delete(self, session):
 		session.xenapi.VIF.destroy(ref)
+
+	def get_name_suffix(self):
+		return str(self.domid)+'.'+str(self.vif_id)
+
+	def check_tap(self):
+		if self.vif_prefix=="tap":
+			return True
+		cmd="ovs-vsctl list-ports "+self.br_name+" | grep tap"+self.get_name_suffix()
+		#log("check_tap in xvif: "+cmd)
+		code=info_exe(cmd)
+		if code==1:
+			return True
+		else:
+			return False
 
 class linux_netif(netif):
 	# netns name

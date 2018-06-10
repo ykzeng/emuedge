@@ -9,6 +9,7 @@ from node import node_type
 from helper import autolog as log
 from helper import mb2byte
 from netif import xen_vif as xvif
+from helper import info_exe
 
 # ATTENTION: all memory are in MB
 class vm(dev):
@@ -38,6 +39,7 @@ class vm(dev):
 		self.vref=self.install(session, template)
 
 		self.if_lst=[None]*7
+		self.if_count=0
 		self.vif_prefix=vif_prefix
 
 	# get the next vif device id
@@ -55,7 +57,7 @@ class vm(dev):
 	# 2. no vif changes are made otherwhere than our system
 	def create_vif_on_xbr(self, session, xswitch):
 		vif_id=str(self.get_new_vif_id())
-		log(str(vif_id))
+		#log(str(vif_id))
 		# construct vif args
 		vif_args={ 'device': vif_id,
 			'network': xswitch.br,
@@ -66,8 +68,9 @@ class vm(dev):
 			"qos_algorithm_params": {},
 			"other_config": {} }
 		handle=session.xenapi.VIF.create(vif_args)
-		vif=xvif(handle)
+		vif=xvif(handle, xswitch.name, int(vif_id), self.vif_prefix)
 		self.if_lst[int(vif_id)]=vif
+		self.if_count+=1
 		return vif
 
 	def set_VCPUs_max(self, session, max_vcpu):
@@ -95,6 +98,17 @@ class vm(dev):
 		else:
 			msg="make sure VM in halted state"
 			log(msg)
+
+	def check_tap(self):
+		no_tap_count=0
+		for i in range(0, self.if_count):
+			if self.if_lst[i]!=None:
+				if self.if_lst[i].check_tap():
+					no_tap_count+=1
+		if no_tap_count==self.if_count:
+			return True
+		else:
+			return False
 
 	def set_fixed_VCPUs(self, session, vcpu):
 		platform_info=session.xenapi.VM.get_platform(self.vref)
@@ -184,8 +198,7 @@ class vm(dev):
 			for vif_id in range(0, len(self.if_lst)):
 				if self.if_lst[vif_id]==None:
 					break
-				linux_name=self.vif_prefix+str(self.domid)+'.'+str(vif_id)
-				self.if_lst[vif_id].start(linux_name)
+				self.if_lst[vif_id].start(int(self.domid))
 			#log("length of vifs on " + self.name + ": " + str(len(vifs)))
 			#for vif in vifs:
 			#	index=int(session.xenapi.VIF.get_device(vif))
