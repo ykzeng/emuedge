@@ -1,0 +1,13 @@
+#!/bin/bash
+count=0
+cmd=
+for i in "$@"; do
+    count=$((count+1))
+    if [ "$count" -eq "1" ]
+    then
+        netns=$i
+    else
+        cmd="$cmd $i"
+    fi
+done
+ip netns exec $netns $cmd
