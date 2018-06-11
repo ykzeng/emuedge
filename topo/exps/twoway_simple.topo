@@ -8,28 +8,46 @@
         "id":1
       },
       {
-        "id":2
-      },
-      {
-        "id":3
-      },
-      {
-        "id":4
-      },
-      {
-        "id":5
-      },
-      {
-        "id":6,
+        "id":2,
         "link_control":{
           "rate":{
-            "latency":"100ms",
+            "latency":"1ms",
+            "burst":"47.5kb",
+            "rate":"95Mbit"
+          }
+        }
+      },
+      {
+        "id":3,
+        "link_control":{
+          "rate":{
+            "latency":"1ms",
+            "burst":"47.5kb",
+            "rate":"95Mbit"
+          }
+        }
+      },
+      {
+        "id":4,
+        "link_control":{
+          "rate":{
+            "latency":"1ms",
+            "burst":"47.5kb",
+            "rate":"95Mbit"
+          }
+        }
+      },
+      {
+        "id":5,
+        "link_control":{
+          "rate":{
+            "latency":"1ms",
             "burst":"47.5kb",
             "rate":"95Mbit"
           }
         }
       }
-    ]
+    ] 
   },
   {
     "id":1,
@@ -59,20 +77,6 @@
   },
   {
     "id":2,
-    "name":"centos0",
-    "type":1,
-    "image":"tcentos",
-    "vcpus":2,
-    "mem":2048,
-    "override":false,
-    "neighbors":[
-      {
-        "id":0
-      }
-    ]
-  },
-  {
-    "id":3,
     "name":"centos1",
     "type":1,
     "image":"tcentos",
@@ -81,7 +85,35 @@
     "override":false,
     "neighbors":[
       {
-        "id":0
+        "id":0,
+        "link_control":{
+          "rate":{
+            "latency":"1ms",
+            "burst":"47.5kb",
+            "rate":"95Mbit"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "id":3,
+    "name":"centos2",
+    "type":1,
+    "image":"tcentos",
+    "vcpus":2,
+    "mem":2048,
+    "override":false,
+    "neighbors":[
+      {
+        "id":0,
+        "link_control":{
+          "rate":{
+            "latency":"1ms",
+            "burst":"47.5kb",
+            "rate":"95Mbit"
+          }
+        }
       }
     ]
   },
@@ -98,98 +130,25 @@
     "ifs":[
       {
         "id":0,
-        "ip":"10.0.0.11/24"
+        "ip":"10.0.0.2/24"
       }
     ],
     "neighbors":[
       {
         "if":0,
-        "id":0
+        "id":0,
+        "link_control":{
+          "rate":{
+            "latency":"1ms",
+            "burst":"47.5kb",
+            "rate":"95Mbit"
+          }
+        }
       }
     ]
   },
   {
     "id":5,
-    "name":"h0",
-    "type":3,
-    "nat":{
-      "is_open":false
-    },
-    "dhcp":{
-      "is_open":false
-    },
-    "ifs":[
-      {
-        "id":0,
-        "ip":"10.0.0.10/24"
-      }
-    ],
-    "neighbors":[
-      {
-        "if":0,
-        "id":0
-      }
-    ]
-  },
-  {
-    "id":6,
-    "name":"xswitch1",
-    "type":0,
-    "neighbors":[
-      {
-        "id":0,
-        "link_control":{
-          "rate":{
-            "latency":"100ms",
-            "burst":"47.5kb",
-            "rate":"95Mbit"
-          }
-        }
-      },
-      {
-        "id":9
-      },
-      {
-        "id":10
-      },
-      {
-        "id":7
-      },
-      {
-        "id":8
-      }
-    ] 
-  },
-  {
-    "id":7,
-    "name":"centos2",
-    "type":1,
-    "image":"tcentos",
-    "vcpus":2,
-    "mem":2048,
-    "override":false,
-    "neighbors":[
-      {
-        "id":6
-      }
-    ]
-  },
-  {
-    "id":8,
-    "name":"centos3",
-    "type":1,
-    "image":"tcentos",
-    "vcpus":2,
-    "mem":2048,
-    "override":false,
-    "neighbors":[
-      {
-        "id":6
-      }
-    ]
-  },
-  {
-    "id":9,
     "name":"h2",
     "type":3,
     "nat":{
@@ -201,36 +160,20 @@
     "ifs":[
       {
         "id":0,
-        "ip":"10.0.0.12/24"
+        "ip":"10.0.0.3/24"
       }
     ],
     "neighbors":[
       {
         "if":0,
-        "id":6
-      }
-    ]
-  },
-  {
-    "id":10,
-    "name":"h3",
-    "type":3,
-    "nat":{
-      "is_open":false
-    },
-    "dhcp":{
-      "is_open":false
-    },
-    "ifs":[
-      {
         "id":0,
-        "ip":"10.0.0.13/24"
-      }
-    ],
-    "neighbors":[
-      {
-        "if":0,
-        "id":6
+        "link_control":{
+          "rate":{
+            "latency":"1ms",
+            "burst":"47.5kb",
+            "rate":"95Mbit"
+          }
+        }
       }
     ]
   }

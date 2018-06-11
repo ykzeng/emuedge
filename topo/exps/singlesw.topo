@@ -12,22 +12,40 @@
         "link_control":{
           "rate":{
             "latency":"100ms",
-            "burst":"47.5kb",
+            "burst":"5000kb",
             "rate":"95Mbit"
           }
         }
       },
       {
-        "id":3
+        "id":3,
+        "link_control":{
+          "rate":{
+            "latency":"100ms",
+            "burst":"5000kb",
+            "rate":"95Mbit"
+          }
+        }
       },
       {
-        "id":4
+        "id":4,
+        "link_control":{
+          "rate":{
+            "latency":"100ms",
+            "burst":"5000kb",
+            "rate":"95Mbit"
+          }
+        }
       },
       {
-        "id":5
-      },
-      {
-        "id":6
+        "id":5,
+        "link_control":{
+          "rate":{
+            "latency":"100ms",
+            "burst":"5000kb",
+            "rate":"95Mbit"
+          }
+        }
       }
     ] 
   },
@@ -71,7 +89,7 @@
         "link_control":{
           "rate":{
             "latency":"100ms",
-            "burst":"47.5kb",
+            "burst":"5000kb",
             "rate":"95Mbit"
           }
         }
@@ -88,7 +106,14 @@
     "override":false,
     "neighbors":[
       {
-        "id":0
+        "id":0,
+        "link_control":{
+          "rate":{
+            "latency":"100ms",
+            "burst":"5000kb",
+            "rate":"95Mbit"
+          }
+        }
       }
     ]
   },
@@ -102,7 +127,14 @@
     "override":false,
     "neighbors":[
       {
-        "id":0
+        "id":0,
+        "link_control":{
+          "rate":{
+            "latency":"100ms",
+            "burst":"5000kb",
+            "rate":"95Mbit"
+          }
+        }
       }
     ]
   },
@@ -116,30 +148,14 @@
     "override":false,
     "neighbors":[
       {
-        "id":0
-      }
-    ]
-  },
-  {
-    "id":6,
-    "name":"h1",
-    "type":3,
-    "nat":{
-      "is_open":false
-    },
-    "dhcp":{
-      "is_open":false
-    },
-    "ifs":[
-      {
         "id":0,
-        "ip":"10.0.0.11/24"
-      }
-    ],
-    "neighbors":[
-      {
-        "if":0,
-        "id":0
+        "link_control":{
+          "rate":{
+            "latency":"100ms",
+            "burst":"5000kb",
+            "rate":"95Mbit"
+          }
+        }
       }
     ]
   }
