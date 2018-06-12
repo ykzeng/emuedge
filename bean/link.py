@@ -86,7 +86,7 @@ class if_link(link):
 			if_link.in_count+=1
 		link.__init__(self, node1, node2, link_if)
 
-	def shape_traffic(self, params=None):
+	def shape_traffic(self, params=None, dist_db=None):
 		if params!=None:
 			pass
 		elif self.params!=None:
@@ -94,7 +94,7 @@ class if_link(link):
 		else:
 			log("no traffic params is set!")
 		#log("shaping traffic for:"+str(self.link.name))
-		cmds=traffic_cmd_compile(params)
+		cmds=traffic_cmd_compile(params, dist_db=dist_db)
 		# determine linux system if name to apply control to
 		if_name=""
 		if self.out:
@@ -120,14 +120,14 @@ class veth_link(link):
 		reverse_link_if=self.link_if.reverse_clone()
 		return veth_link(self.node_lst[1], self.node_lst[0], reverse_link_if)
 
-	def shape_traffic(self, params=None):
+	def shape_traffic(self, params=None, dist_db=None):
 		if params!=None:
 			pass
 		elif self.params!=None:
 			params=self.params
 		else:
 			log("no traffic params is set!")
-		cmds=traffic_cmd_compile(params)
+		cmds=traffic_cmd_compile(params, dist_db=dist_db)
 		# determine linux system if name to apply control to
 		if_name=self.link_if.peer[0].name
 		netns=self.link_if.peer[0].netns
@@ -137,13 +137,13 @@ class veth_link(link):
 		#raw_input("before shaping the traffic")
 		run_in_netns(cmds, netns)
 
-def traffic_cmd_compile(params):
+def traffic_cmd_compile(params, dist_db=None):
 	if len(params)==0:
 		log("no traffic shaping param is specified!", logging.CRITICAL)
 	cmds=[]
 	for key in params:
 		if key=="netem":
-			cmds.append(netem_json2cmd(params[key]))
+			cmds.append(netem_json2cmd(params[key], dist_db=dist_db))
 		elif key=="rate":
 			cmds.append(tbfrate_json2cmd(params[key]))
 		else:
@@ -155,11 +155,20 @@ def traffic_cmd_compile(params):
 		cmds[i]=tc_prefix+" parent 1: handle "+str(i+1)+": "+cmds[i]
 	return cmds
 
-def netem_json2cmd(params):
+def netem_json2cmd(params, dist_db=None):
 	netem_cmd="netem "
 	for key in params:
 		param=params[key]
 		if key=="delay":
+			# if this is a customized distribution
+			if dist_db!=None:
+				if "distribution" in param and param["distribution"]!=None and param["distribution"] in dist_db:
+					dist_obj=dist_db[param["distribution"]]
+					param["base"]=dist_obj.mu
+					param["variation"]=dist_obj.sigma
+					param["correlation"]=None
+			#else:
+			#	log("dist_db not exists!")
 			netem_cmd+=key+" "+param["base"]+" "
 			if "variation" in param and param["variation"]!=None:
 				netem_cmd+=param["variation"]+" "
@@ -169,6 +178,7 @@ def netem_json2cmd(params):
 					netem_cmd+="distribution"+" "+param["distribution"]+" "
 		else:
 			netem_cmd+=key+" "+param["base"]+" "+param["correlation"]+" "
+	#log("netem command to issue: "+netem_cmd)
 	return netem_cmd
 
 def tbfrate_json2cmd(params):

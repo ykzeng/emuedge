@@ -1,6 +1,8 @@
-bash/*
 shell.py
 switch.py
+bash/
+trace/logs
+trace/dist
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

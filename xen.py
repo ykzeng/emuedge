@@ -23,11 +23,17 @@ from link import veth_link
 from link import if_link
 from netif import ifb
 
+class delay_dist:
+	def __init__(self, mu, sigma, rho=None):
+		self.mu=mu
+		self.sigma=sigma
+		self.rho=rho
+
 # session: xen session
 # ssh: ssh session
 class xen_net:
 
-	def __init__(self, uname, pwd, template_lst, ifb_count=0):
+	def __init__(self, uname, pwd, template_lst, dist_db=None, ifb_count=0):
 		# ASSUME: we got sudo
 		helper.info_exe('chmod +x ./bash/*')
 		# a list of 'dev' instances
@@ -50,6 +56,30 @@ class xen_net:
 			ifb.init(ifb_count)
 			self.ifb_count=ifb_count
 		pass
+		# init distribution db
+		self.dist_db=None
+		if dist_db!=None:
+			self.init_dist_db(dist_db)
+
+	def init_dist_db(self, dist_db):
+		self.dist_db={}
+
+		distdb_file=open(dist_db)
+		lines=distdb_file.readlines()
+		dist_count=len(lines)
+		i=0
+		while i < dist_count:
+			name=lines[i][:-1]
+			mu=lines[i+1].replace(" ", "").split("=")[1][:-1]+"ms"
+			sigma=lines[i+2].replace(" ", "").split("=")[1][:-1]+"ms"
+			new_dist=delay_dist(mu, sigma)
+			self.dist_db[name]=new_dist
+			i+=4
+		# for debugging
+		name_list="dists loaded:"
+		for dist in self.dist_db:
+			name_list+=dist+"\t"
+		log(name_list)
 
 	@staticmethod
 	def init_session(uname, pwd, local=True):
@@ -249,7 +279,7 @@ class xen_net:
 				i+=1
 		log("start applying traffic shaping rules...")
 		# enable link control
-		[link.shape_traffic() for link in self.controlled_link_set]
+		[link.shape_traffic(dist_db=self.dist_db) for link in self.controlled_link_set]
 
 
 	# did in topology init process would be purely determined by topo definition
@@ -379,7 +409,7 @@ def test_connect():
 	xnet.connect(test2, br1)
 	return xnet
 
-def test_topo(topo, start=True, nolog=False):
+def test_topo(topo, dist_db="trace/dist_db", start=True, nolog=False):
 	# simple logging
 	#FORMAT = "[%(levelname)s - %(filename)s:%(lineno)s - %(funcName)s() ] %(message)s"
 	logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
@@ -387,7 +417,7 @@ def test_topo(topo, start=True, nolog=False):
 	logger.disabled=nolog
 	# init xennet with templates we would like to use
 	tlst=['tandroid', 'tcentos', 'centos-new']
-	xnet=xen_net("root", "789456123", tlst)
+	xnet=xen_net("root", "789456123", tlst, dist_db=dist_db)
 	# creating test nodes
 	xnet.init_topo('topo/' + topo)
 	if start:
@@ -398,3 +428,11 @@ def xnet_interactive():
 	tlst=['tandroid', 'tcentos']
 	xnet=xen_net("root", "789456123", tlst)
 	return xnet
+
+def test_dist(dist_db='trace/dist_db', nolog=False):
+	logging.basicConfig(stream=sys.stderr, level=logging.DEBUG)
+	logger=logging.getLogger()
+	logger.disabled=nolog
+	# init xennet with templates we would like to use
+	tlst=['tandroid', 'tcentos', 'centos-new']
+	xnet=xen_net("root", "789456123", tlst, dist_db=dist_db)
