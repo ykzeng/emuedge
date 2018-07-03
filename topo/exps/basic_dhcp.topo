@@ -16,6 +16,12 @@
             "rate":"95Mbit"
           }
         }
+      },
+      {
+        "id":3
+      },
+      {
+        "id":4
       }
     ] 
   },
@@ -63,6 +69,34 @@
             "rate":"95Mbit"
           }
         }
+      }
+    ]
+  },
+  {
+    "id":3,
+    "name":"centos1",
+    "type":1,
+    "image":"tcentos",
+    "vcpus":2,
+    "mem":2048,
+    "override":false,
+    "neighbors":[
+      {
+        "id":0
+      }
+    ]
+  },
+  {
+    "id":4,
+    "name":"centos2",
+    "type":1,
+    "image":"tcentos",
+    "vcpus":2,
+    "mem":2048,
+    "override":false,
+    "neighbors":[
+      {
+        "id":0
       }
     ]
   }

@@ -157,7 +157,7 @@ class xen_net:
 		return self.node_list[did]
 
 	# the 1st entry to create node
-	def create_new_dev(self, tname, name, override, did=-1, vcpu=0, mem=0, vif_prefix=None):
+	def create_new_dev(self, tname, name, override, did=-1, vcpu=0, mem=0, vif_prefix=None, VCPUs_params=None):
 		if did==-1:
 			did=self.get_new_id()
 		template=self.template_dict[tname]
@@ -167,6 +167,8 @@ class xen_net:
 			node.set_memory(self.session, mem)
 		self.node_list[did]=node
 		self.dev_set.add(did)
+		if VCPUs_params:
+			node.set_VCPUs_params_dict(self.session, VCPUs_params)
 		return node
 
 	# TODO: what to return? did or the newly created obj
@@ -302,12 +304,16 @@ class xen_net:
 				if 'vif_prefix' in node:
 					vif_prefix=node['vif_prefix']
 				if node['override']:
-					self.create_new_dev(node['image'], node['name'], 
+					node_obj=self.create_new_dev(node['image'], node['name'], 
 					node['override'], did=node['id'], vcpu=node['vcpus'], 
 					mem=node['mem'], vif_prefix=vif_prefix)
 				else:
-					self.create_new_dev(node['image'], node['name'], 
+					node_obj=self.create_new_dev(node['image'], node['name'], 
 					node['override'], did=node['id'], vif_prefix=vif_prefix)
+
+				if 'VCPUs_params' in node:
+					node_obj.set_VCPUs_params_dict(self.session, node['VCPUs_params'])
+
 			elif node['type']==ntype.ROUTER:
 				self.create_new_xrouter(node['name'], node['ipaddr'], did=node['id'])
 			elif node['type']==ntype.PROUTER:

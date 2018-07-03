@@ -32,7 +32,7 @@ class vm(dev):
 	# per XenServer 7.4, the limit of vif number on a VM is 7
 	vif_prefix='vif'
 
-	def __init__(self, session, did, template, name, vif_prefix='vif'):
+	def __init__(self, session, did, template, name, vif_prefix='vif', VCPUs_params=None):
 		# TODO: may need to change node type
 		dev.__init__(self, did, name, dtype=node_type.DEV)
 		self.template=template
@@ -41,6 +41,9 @@ class vm(dev):
 		self.if_lst=[None]*7
 		self.if_count=0
 		self.vif_prefix=vif_prefix
+		
+		if VCPUs_params:
+			self.set_VCPUs_params(session, VCPUs_params)
 
 	# get the next vif device id
 	def get_new_vif_id(self):
@@ -118,6 +121,19 @@ class vm(dev):
 
 		self.set_VCPUs_max(session, vcpu)
 		self.set_VCPUs_at_startup(session, vcpu)
+
+	def set_VCPUs_params_dict(self, session, params):
+		session.xenapi.VM.set_VCPUs_params(self.vref, params)
+
+	def set_VCPUs_params(self, session, weight=None, mask=None, cap=None):
+		params={}
+		if weight:
+			params["weight"]=str(weight)
+		if mask:
+			params["mask"]=str(mask)
+		if cap:
+			params["cap"]=str(cap)
+		self.set_VCPUs_params_dict(params)
 
 	# install the vm based on snapshot/template ssid
 	# @session: XenAPI session
