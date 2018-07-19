@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import XenAPI, logging, sys
+import XenAPI, logging, sys, time
 
 sys.path.insert(0, '../utils')
 sys.path.insert(0, './')
@@ -41,7 +41,7 @@ class vm(dev):
 		self.if_lst=[None]*7
 		self.if_count=0
 		self.vif_prefix=vif_prefix
-		
+
 		if VCPUs_params:
 			self.set_VCPUs_params(session, VCPUs_params)
 
@@ -271,8 +271,11 @@ class vm(dev):
 	def uninstall(self, session):
 		log("uninstalling " + self.name)
 		if (self.get_power_state(session)=='Halted'):
+			start_time=time.time()
 			self.destroy_all_vbd_vdi(session)
 			self.destroy(session)
+			end_time=time.time()
+			log(self.name+" uninstallation took "+str(end_time-start_time)+"ms")
 		else:
 			msg="make sure VM in halted state"
 			log(msg)

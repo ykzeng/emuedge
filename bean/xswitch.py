@@ -19,17 +19,28 @@ class xswitch(node):
 	# handle
 	br=''
 
-	def __init__(self, session, did, name):
-		br_args={'assigned_ips': {}, 
-				'name_label': name, 
-				'name_description': '', 
-				'MTU': '1500', 
-				'other_config':{},
-				'blobs': {}}
-		self.br=session.xenapi.network.create(br_args)
-		new_name=session.xenapi.network.get_bridge(self.br)
-		log("XSwitch "+name+" in Linux: "+new_name)
-		node.__init__(self, did, new_name, node_type.SWITCH)
+	# @default: is this bridge by default in XenServer?
+	# for default bridges we cannot delete them, we use uuid for identifying default switch
+	def __init__(self, session, did, name, default=False, uuid=""):
+		if default:
+			self.br=session.xenapi.network.get_by_uuid(uuid)
+			# ignore the passed name, get name from xenserver instead
+			br_name=session.xenapi.network.get_bridge(self.br)
+			log("default XSwitch "+name+" in Linux: "+br_name)
+			node.__init__(self, did, br_name, node_type.SWITCH)
+		else:
+			br_args={'assigned_ips': {}, 
+					'name_label': name, 
+					'name_description': '', 
+					'MTU': '1500', 
+					'other_config':{},
+					'blobs': {}}
+			self.br=session.xenapi.network.create(br_args)
+			br_name=session.xenapi.network.get_bridge(self.br)
+			log("XSwitch "+name+" in Linux: "+br_name)
+			node.__init__(self, did, br_name, node_type.SWITCH)
+
+		self.default=default
 
 	def plug(self, session, dev):
 		return dev.create_vif_on_xbr(session, self)
@@ -72,9 +83,12 @@ class xswitch(node):
 		for neigh in self.neighbors:
 			link_if=self.neighbors[neigh]
 			link_if.delete()
-		session.xenapi.network.destroy(self.br)
-		cmd="ovs-vsctl del-br "+self.name
-		info_exe(cmd)
+		if not self.default:
+			session.xenapi.network.destroy(self.br)
+			cmd="ovs-vsctl del-br "+self.name
+			info_exe(cmd)
+		else:
+			log("default XenSwitch "+self.name+" not being deleted!")
 
 	def start(self, session=None):
 		# xen switch automatically starts when any device 
@@ -82,6 +96,7 @@ class xswitch(node):
 		for key in self.neighbors:
 			if key.dtype==node_type.SWITCH:
 				self.add_port(self.neighbors[key].peer[0].name)
+				# start all veth pairs on bridge, those are currently only for switch2switch connection
 				self.neighbors[key].peer[0].start()
 				self.neighbors[key].peer[1].start()
 
