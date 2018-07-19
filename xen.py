@@ -173,10 +173,10 @@ class xen_net:
 
 	# TODO: what to return? did or the newly created obj
 	# the 2nd entry to create node
-	def create_new_xbr(self, name, did=-1, record=True):
+	def create_new_xbr(self, name, did=-1, record=True, default=False, uuid=""):
 		if did==-1 and record:
 			did=self.get_new_id()
-		br=xswitch(self.session, did, name)
+		br=xswitch(self.session, did, name, default=default, uuid=uuid)
 		if record:
 			self.node_list[did]=br
 			self.switch_set.add(did)
@@ -298,7 +298,11 @@ class xen_net:
 		# create all nodes
 		for node in nodes:
 			if node['type']==ntype.SWITCH:
-				self.create_new_xbr(node['name'], did=node['id'])
+				if 'default' not in node:
+					node['default']=False
+					node['uuid']=""
+				self.create_new_xbr(node['name'], did=node['id'], 
+					default=node['default'], uuid=node['uuid'])
 			elif node['type']==ntype.DEV:
 				vif_prefix='vif'
 				if 'vif_prefix' in node:
@@ -422,7 +426,7 @@ def test_topo(topo, dist_db="trace/dist_db", start=True, nolog=False):
 	logger=logging.getLogger()
 	logger.disabled=nolog
 	# init xennet with templates we would like to use
-	tlst=['tandroid', 'tcentos', 'centos-new']
+	tlst=['tandroid', 'tcentos', 'mstorm-old']
 	xnet=xen_net("root", "789456123", tlst, dist_db=dist_db)
 	# creating test nodes
 	xnet.init_topo('topo/' + topo)

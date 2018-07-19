@@ -23,6 +23,7 @@ class xswitch(node):
 	# for default bridges we cannot delete them, we use uuid for identifying default switch
 	def __init__(self, session, did, name, default=False, uuid=""):
 		if default:
+			print "xswitch "+name+" get uuid: "+uuid
 			self.br=session.xenapi.network.get_by_uuid(uuid)
 			# ignore the passed name, get name from xenserver instead
 			br_name=session.xenapi.network.get_bridge(self.br)
