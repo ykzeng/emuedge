@@ -1,6 +1,17 @@
 # EmuEdge (Previously HybridNet)
 
-A scalable, Hi-Fi, highly-automated real-life network emulator based on Xen/Linux Netns/OvS, supporting edge computing prototyping and general network emulation with both container/vm/physical machines.
+EmuEdge is a scalable, Hi-Fi, highly-automated real-world network emulator based on Xen/Linux Netns/OvS, supporting edge computing prototyping and general network emulation with both container/vm and can be hybridly combined with existing physical infrastructures. Ultimately, EmuEdge is designed to emulate real-world experiments with high Degree of Realism (DoR) in lab settings instead of costly physical field deployments. An overview of EmuEdge architecture is shown below:
+![arch](https://github.com/ykzeng/emuedge/blob/master/docs/figures/arch.png)
+
+## Reproducing Experiments on EmuEdge
+The following parameters can be configured to emulate/reproduce a realistic experiment:
+* Network Topology: EmuEdge provides a JSON API based on adjacency list to define a network topology, with major network components virtualized in EmuEdge, we can easily replay a real-world topology as is on EmuEdge.
+* Link Quality: Real-world networks are filled with noises and interferences, especially when wireless networks are gaining popularities nowadays. Comparing to previous work, EmuEdge provides more functionalities in emulating unrealiable networks. For each virtual link in EmuEdge, basic asymmetric/bidirectional network quality can be defined in multi perspectives of network (e.g., delay, packet loss). Moreover, with EmuEdge, we can define correlations in common network metrics to emulate network consistency and even reproduce a real-world network trace as is.
+* Emulation Parameters (node configurations): Besides virtual routers and switches, currently EmuEdge supports two types of network nodes, container (linux netns) node for network-bounded emulation with high scalability and Xen VM node for computation-bounded experiments. The computing resources of EmuEdge server can be limited or dedicated to each node properly to achieve high DoR in computation with low costs.
+* Mobility/Synthetic trace (in progress): EmuEdge aims to support synthetic traces (from traditional simulators) and mobility emulation in future work.
+The figure below shows an example of extracting information from real experiment for repeated experiment replays on EmuEdge.
+![reproduce](https://github.com/ykzeng/emuedge/tree/master/docs/figures/reproduce.png)
+
 
 ## Usages
 ### Initing A Topology
