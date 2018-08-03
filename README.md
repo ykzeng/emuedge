@@ -1,7 +1,9 @@
 # EmuEdge (Previously HybridNet)
 
 EmuEdge is a scalable, Hi-Fi, highly-automated real-world network emulator based on Xen/Linux Netns/OvS, supporting edge computing prototyping and general network emulation with both container/vm and can be hybridly combined with existing physical infrastructures. Ultimately, EmuEdge is designed to emulate real-world experiments with high Degree of Realism (DoR) in lab settings instead of costly physical field deployments. An overview of EmuEdge architecture is shown below:
-![arch](https://github.com/ykzeng/emuedge/blob/master/docs/figures/arch.png)
+<p align="center">
+<img src="https://github.com/ykzeng/emuedge/blob/master/docs/figures/arch.png" width="400" height="500">
+</p>
 
 ## Reproducing Experiments on EmuEdge
 The following parameters can be configured to emulate/reproduce a realistic experiment:
@@ -10,8 +12,9 @@ The following parameters can be configured to emulate/reproduce a realistic expe
 * Emulation Parameters (node configurations): Besides virtual routers and switches, currently EmuEdge supports two types of network nodes, container (linux netns) node for network-bounded emulation with high scalability and Xen VM node for computation-bounded experiments. The computing resources of EmuEdge server can be limited or dedicated to each node properly to achieve high DoR in computation with low costs.
 * Mobility/Synthetic trace (in progress): EmuEdge aims to support synthetic traces (from traditional simulators) and mobility emulation in future work.
 The figure below shows an example of extracting information from real experiment for repeated experiment replays on EmuEdge.
-![reproduce](https://github.com/ykzeng/emuedge/tree/master/docs/figures/reproduce.png)
-
+<p align="center">
+<img src="https://github.com/ykzeng/emuedge/blob/master/docs/figures/reproduce.png" width="500" height="500">
+</p>
 
 ## Usages
 ### Initing A Topology
