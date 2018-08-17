@@ -61,6 +61,18 @@ xnet.create_new_dev("Android", "android-test", True, vcpu=2, mem=2048)
 ```
 We left a more comprehensive API documents for interactive control over the topology as future work.
 
+## Contents
+### Directories
+-bean/: EmuEdge core objects (e.g., vm, container, interface, etc) and functions
+-utils/: helper/non-core utility functions
+-trace/: network trace analysis module based on iproute2 and a sample real-world wifi trace
+-bash/: some example scripts for manipulating virtual networks
+-docs/: paper manuscript and referred figures go here
+-topo/: testing topology sets covering all functions of EmuEdge, including paper experiments topologies
+### Files:
+-ee: container operation entry
+-xen.py: main entry for EmuEdge
+
 ## Dependencies
 ### Necessary
 * Xen and XenAPI
