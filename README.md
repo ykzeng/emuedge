@@ -5,7 +5,8 @@ EmuEdge is a scalable, Hi-Fi, highly-automated real-world network emulator based
 <img src="https://github.com/ykzeng/emuedge/blob/master/docs/figures/arch.png" width="400" height="500">
 </p>
 
-## Cite this work
+## In Conference Proceedings
+If you want to learn more technical details, the following paper is associated with this code repository:
 
 Zeng, Yukun, Mengyuan Chao, and Radu Stoleru. "EmuEdge: A hybrid emulator for reproducible and realistic edge computing experiments." 2019 IEEE International Conference on Fog Computing (ICFC). IEEE, 2019. ([Download](https://ieeexplore.ieee.org/document/8822062))
 
