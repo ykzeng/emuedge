@@ -1,4 +1,4 @@
-# EmuEdge (Previously HybridNet)
+# EmuEdge
 
 EmuEdge is a scalable, Hi-Fi, highly-automated real-world network emulator based on Xen/Linux Netns/OvS, supporting edge computing prototyping and general network emulation with both container/vm and can be hybridly combined with existing physical infrastructures. Ultimately, EmuEdge is designed to emulate real-world experiments with high Degree of Realism (DoR) in lab settings instead of costly physical field deployments. An overview of EmuEdge architecture is shown below:
 <p align="center">
